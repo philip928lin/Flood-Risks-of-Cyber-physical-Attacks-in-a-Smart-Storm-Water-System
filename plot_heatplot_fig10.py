@@ -18,48 +18,44 @@ with open(os.path.join(model_path, folder, "Prob.pickle"), "rb") as f:
     (_, _, _, df_p_noA) = pickle.load(f)
 
 #%%
-yr_list = [200,100,50,25,10,5,2,1] #[1, 2, 5, 10, 25, 50, 100, 200]
-ta_list = [5,10,15,20,25,30,35,40,45,50,55,60]
+yr_list = [1, 2, 5, 10, 25, 50, 100, 200]
 
-fig, axes = plt.subplots(ncols=3, nrows=3, sharex=True, sharey=True,
-                         figsize=(5.5,4))
-plt.tight_layout(h_pad=1, w_pad=0)
-axes = axes.flatten()
+ta = 35
+df_p_c_noTa = df_p_c[df_p_c["ta"]==ta]
+df_p_noA_noTa = df_p_noA[df_p_noA["ta"]==ta]
+
+
+fig, axes = plt.subplots(figsize=(3,3))
 cbar_ax = fig.add_axes([0.97, 0.1, 0.02, 0.8])
 cmap = sns.color_palette("mako_r", as_cmap=True)
+cmap = sns.color_palette("PuBu", as_cmap=True)
+cmap = sns.color_palette("Blues", as_cmap=True)
+cmap = sns.color_palette("GnBu", as_cmap=True)
 
 ponds = ['Pond 1', 'Pond 2', 'Pond 3', 'Pond 4', 'Pond 5', 'Pond 6', 'Pond 7', 'Pond 8', 'Pond 9']
 
-df_proportion = df_p_noA.copy()
-df_proportion = df_p_noA.loc[:, ponds]/df_p_c.loc[:, ponds]
+df_proportion = df_p_noA_noTa.copy()
+df_proportion = df_p_noA_noTa.loc[:, ponds]/df_p_c_noTa.loc[:, ponds]
 
-for k, v in enumerate([8,4,2,7,5,3,9,6,1]):
-    prob = np.fliplr(df_p_c["Pond {}".format(v)].values.reshape((12, 8), order="F"))
-    prob[prob==0] = np.nan
-    prob = prob.T
-    ax = sns.heatmap(prob, xticklabels=ta_list, yticklabels=yr_list, square=True,
-                      cmap=cmap, vmin=0.00001, vmax=1, ax=axes[k], cbar=v ==3,
-                      cbar_ax=cbar_ax)
-    ax.set_facecolor('lightgrey')
-    ax.set_title("Pond "+str(v), fontsize=9)
+pondud = ['Pond 8', 'Pond 2', 'Pond 4', 'Pond 5', 'Pond 7', 'Pond 3', 'Pond 6', 'Pond 9', 'Pond 1']
+pondud = ['Pond 1', 'Pond 3', 'Pond 8', 'Pond 7', 'Pond 2', 'Pond 9', 'Pond 6', 'Pond 4', 'Pond 5']
+cpr = df_p_c_noTa.loc[:, pondud].values.T
+cpr[cpr==0] = np.nan
+ax = sns.heatmap(cpr, xticklabels=yr_list, yticklabels=pondud, square=False,
+                  cmap=cmap, vmin=0.00001, vmax=1, ax=axes, cbar=True,
+                  cbar_ax=cbar_ax)
+ax.set_facecolor('lightgrey')
 
-    proportion = np.fliplr(df_proportion["Pond {}".format(v)].values.reshape((12, 8), order="F"))
-    locs = np.where(proportion >= 0.9)
-    for xi, yi in zip(locs[0], locs[1]):
-        ax.add_patch(Rectangle((xi, yi), 1, 1, ec='red', fc='none', lw=0.8, hatch='//', alpha=0.5))
-axes[5].annotate("Flooding risks given FDI", (1.4, -0.3), rotation=270, xycoords='axes fraction', fontsize=11)
+proportion = df_proportion.loc[:, pondud].values.T
+locs = np.where(proportion >= 0.9)
+for xi, yi in zip(locs[1], locs[0]):
+    print(xi)
+    ax.add_patch(Rectangle((xi, yi), 1, 1, ec='red', fc='none', lw=0.8, hatch='//', alpha=0.5))
 
-fig.add_subplot(111, frameon=False)
-plt.tick_params(labelcolor='none', top=False, bottom=False,
-                left=False, right=False)
-plt.xlabel("\n$T^a$ (minute)", fontsize=11)
-plt.ylabel("Return period (year)", fontsize=11, labelpad=10)
-plt.show()
+ax.add_patch(Rectangle((0, 0), 8, 3, ec='blue', fc='none', lw=1.5, ls="--"))
 
-
-# cbar = fig.colorbar(ax, cax=cb_ax)
-# cbar.set_ticks([0,0.5,1])
-# cbar.set_ticklabels([0,0.5,1])
+ax.annotate("Conditional flood risks given FDI", (1.26, -0.02), rotation=270, xycoords='axes fraction', fontsize=11)
+ax.set_xlabel("Return period (year)", fontsize=11)
 
 
 
